@@ -28,7 +28,6 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-
 setup(
     name="Wrapper",
     version='0.1',
@@ -54,7 +53,9 @@ setup(
     ],
 
     keywords="api wrapper instrocpective discover serverless notebook jupyter",
-    packages=find_packages(exclude=['docs', 'examples', 'tests']),
+#    packages=["src/wrapper"],
+    package_dir={"": "src"},
     py_modules=["wrapper"],
+#    namespace_packages=["src"],
     install_requires=['requests']
 )
