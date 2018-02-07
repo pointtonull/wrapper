@@ -1,0 +1,5 @@
+.deps
+*.swp
+*_cache/
+.tools
+__pycache__
