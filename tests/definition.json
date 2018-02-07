@@ -1,0 +1,17 @@
+{
+  "service": "Example API",
+  "endpoints": [
+    {
+      "url": "POST /auth",
+      "description": "data is the complex thingy"
+    },
+    {
+      "url": "GET /describe/{thingy}",
+      "description": "Get info for given thingy"
+    },
+    {
+      "url": "GET /",
+      "description": "Self-documenting endpoint."
+    }
+  ]
+}
