@@ -55,7 +55,7 @@ setup(
     keywords="api wrapper instrocpective discover serverless notebook jupyter",
 #    packages=["src/wrapper"],
     package_dir={"": "src"},
-    py_modules=["wrapper"],
+    py_modules=["wrapper", "gatekeeper"],
 #    namespace_packages=["src"],
     install_requires=['requests']
 )

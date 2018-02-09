@@ -13,6 +13,8 @@ import types
 
 import requests
 
+from gatekeeper import Identity
+
 RE_VARS = re.compile(r"/{.*")
 RE_VAR = re.compile(r"{([\w_]+?)}")
 
@@ -36,7 +38,16 @@ class Session:
 
         self._definition = definition
         self._init()
-        self._session = requests.Session()
+        self.requests = requests.Session()
+
+    def authenticate(self, username, password, new_password=None):
+        """
+        """
+        user_pool = self._definition["authorizer"]["user_pool_id"]
+        client_id = self._definition["authorizer"]["client_id"]
+        self.identity = Identity(user_pool, client_id, username, password,
+                                 new_password)
+        self.requests.headers["x-auth-token"] = self.identity.id_token
 
     def _init(self):
         """
@@ -55,7 +66,8 @@ class Session:
             ep_name = RE_VARS.sub("", ep_url).strip("/")
             if ep_name:
                 ep_vars = RE_VAR.findall(endpoint)
-                self.__doc__ += "%s(%s): %s\n" % (ep_name, ", ".join(ep_vars), ep_type)
+                self.__doc__ += "%s(%s): %s\n" % (ep_name, ", ".join(ep_vars),
+                                                  ep_type)
                 method_name = "%s_%s" % (ep_type.lower(), ep_name)
                 self._create_method(method_name, ep_vars, ep_type, ep_url,
                                     endpoint, description)
@@ -63,7 +75,8 @@ class Session:
             self.__doc__ += "%s:" % endpoint
             self.__doc__ += "%s\n" % description
 
-    def _create_method(self, method_name, ep_vars, ep_type, ep_url, endpoint, description):
+    def _create_method(self, method_name, ep_vars, ep_type, ep_url, endpoint,
+                       description):
         """
             Through me you pass into the city of woe:
             Through me you pass into eternal pain:
@@ -105,8 +118,8 @@ class Session:
         if self._is_dummy:
             return request
 
-        request = self._session.prepare_request(request)
-        response = self._session.send(request)
+        request = self.requests.prepare_request(request)
+        response = self.requests.send(request)
         try:
             return response.json()
         except:  # noqa
@@ -118,6 +131,8 @@ def main():
     The main function.
     """
     print("Happy hacking")
+    import IPython
+    IPython.embed()
 
 
 if __name__ == "__main__":
