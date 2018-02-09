@@ -8,6 +8,7 @@ Dynamically defined wrapper for introspective APIs.
 from sys import exit
 from textwrap import dedent
 import json
+import os
 import re
 import types
 
@@ -44,6 +45,8 @@ class Session:
         """
         """
         authorizer = self._definition["authorizer"]
+        region = authorizer.get("user_pool_region", "eu-west-1")
+        os.environ["AWS_DEFAULT_REGION"] = region
         self.identity = Identity(authorizer, username, password, new_password)
         self.requests.headers["x-auth-token"] = self.identity.id_token
 
