@@ -24,11 +24,11 @@ class Identity(Cognito):
         self.username = username
         if new_password:
             self.forced_password_change(password, new_password)
-        self.autenticate(password)
+        self.authenticate(password)
 
-    def autenticate(self, password):
+    def authenticate(self, password):
         try:
-            super().authenticate(password)
+            super().admin_authenticate(password)
         except ForceChangePasswordException:
             print("User must change their password before authenticate. Call with new_password argument.")
 
