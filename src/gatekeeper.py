@@ -15,13 +15,13 @@ from warrant.exceptions import ForceChangePasswordException
 
 class Identity(Cognito):
 
-    def __init__(self, user_pool, client_id, username, password, new_password=None):
+    def __init__(self, authorizer, username, password, new_password=None):
         """
         Identity initialization
         """
-        self._user_pool = user_pool
-        self._client_id = client_id
-        super().__init__(user_pool, client_id, username=username)
+        self._authorizer = authorizer
+        super().__init__(**authorizer)
+        self.username = username
         if new_password:
             self.forced_password_change(password, new_password)
         self.autenticate(password)
@@ -36,7 +36,7 @@ class Identity(Cognito):
         """
         First password reset helper to complete user sign-up
         """
-        aws = AWSSRP(self.username, oldpassword, self._user_pool_id, self._client_id)
+        aws = AWSSRP(self.username, oldpassword, self.user_pool_id, self.client_id)
         return aws.set_new_password_challenge(newpassword)
 
 

@@ -43,10 +43,8 @@ class Session:
     def authenticate(self, username, password, new_password=None):
         """
         """
-        user_pool = self._definition["authorizer"]["user_pool_id"]
-        client_id = self._definition["authorizer"]["client_id"]
-        self.identity = Identity(user_pool, client_id, username, password,
-                                 new_password)
+        authorizer = self._definition["authorizer"]
+        self.identity = Identity(authorizer, username, password, new_password)
         self.requests.headers["x-auth-token"] = self.identity.id_token
 
     def _init(self):
