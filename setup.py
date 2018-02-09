@@ -30,7 +30,7 @@ here = path.abspath(path.dirname(__file__))
 
 setup(
     name="Wrapper",
-    version='0.2',
+    version='0.3',
     description='Universal API Wrapper.',
     long_description=open("README.md").read(),
 
