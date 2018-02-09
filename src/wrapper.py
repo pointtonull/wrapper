@@ -14,8 +14,6 @@ import types
 
 import requests
 
-from gatekeeper import Identity
-
 RE_VARS = re.compile(r"/{.*")
 RE_VAR = re.compile(r"{([\w_]+?)}")
 
@@ -41,14 +39,12 @@ class Session:
         self._init()
         self.requests = requests.Session()
 
-    def authenticate(self, username, password, new_password=None):
+    def authenticate(self, username, password):
         """
         """
-        authorizer = self._definition["authorizer"]
-        region = authorizer.get("user_pool_region", "eu-west-1")
-        os.environ["AWS_DEFAULT_REGION"] = region
-        self.identity = Identity(authorizer, username, password, new_password)
-        self.requests.headers["x-auth-token"] = self.identity.id_token
+        self.user = self.post_authenticate(data="", auth=(username, password))
+        self.requests.headers["x-auth-token"] = self.user["IdToken"]
+        return self.user
 
     def _init(self):
         """
@@ -100,21 +96,21 @@ class Session:
         space = {}
         funct_text = dedent('''
 
-            def method({ep_vars_str}):
-                return self._exec("{ep_type}", "{ep_url}", locals())
+            def method({ep_vars_str}, **kwargs):
+                return self._exec("{ep_type}", "{ep_url}", locals(), **kwargs)
 
         '''.format(**locals()))
         exec(funct_text, {}, space)
         space["method"].__doc__ = "{endpoint}:\n{description}".format(**locals())
         setattr(self, method_name, types.MethodType(space["method"], self))
 
-    def _exec(self, method, endpoint, args):
+    def _exec(self, method, endpoint, args, **kwargs):
         """
         Executes the query if working with a real url
         """
         url = self.root + endpoint.format(**args).lstrip("/")
         data = args.get("data")
-        request = requests.Request(method, url, data=data)
+        request = requests.Request(method, url, data=data, **kwargs)
 
         if self._is_dummy:
             return request
