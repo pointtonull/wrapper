@@ -110,7 +110,7 @@ class Session:
         """
         url = self.root + endpoint.format(**args).lstrip("/")
         data = args.get("data")
-        request = requests.Request(method, url, data=data, **kwargs)
+        request = requests.Request(method, url, data=data, params=kwargs)
 
         if self._is_dummy:
             return request
