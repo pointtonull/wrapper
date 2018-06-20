@@ -39,12 +39,17 @@ class Session:
         self._init()
         self.requests = requests.Session()
 
+
     def authenticate(self, username, password):
         """
         """
         self.user = self.post_authenticate(data="", auth=(username, password))
-        self.requests.headers["x-auth-token"] = self.user["IdToken"]
+        if "IdToken" in self.user:
+            self.requests.headers["x-auth-token"] = self.user["IdToken"]
+        else:
+            raise ValueError("'IdToken' not found in auth answer: '%s'" % self.user)
         return self.user
+
 
     def _init(self):
         """
@@ -97,20 +102,28 @@ class Session:
         funct_text = dedent('''
 
             def method({ep_vars_str}, **kwargs):
-                return self._exec("{ep_type}", "{ep_url}", locals(), **kwargs)
+                return self._exec("{ep_type}", "{ep_url}", locals())
 
         '''.format(**locals()))
         exec(funct_text, {}, space)
         space["method"].__doc__ = "{endpoint}:\n{description}".format(**locals())
         setattr(self, method_name, types.MethodType(space["method"], self))
 
-    def _exec(self, method, endpoint, args, **kwargs):
+
+    def _exec(self, method, endpoint, scope):
         """
         Executes the query if working with a real url
         """
-        url = self.root + endpoint.format(**args).lstrip("/")
-        data = args.get("data")
-        request = requests.Request(method, url, data=data, **kwargs)
+        url = self.root + endpoint.format(**scope).lstrip("/")
+        data = scope.get("data")
+        kwargs = scope.get("kwargs")
+        auth = kwargs.pop("auth", None)
+
+        if kwargs:
+            params = {key:value  for key, value in kwargs.items()}
+            request = requests.Request(method, url, data=data, auth=auth, params=params)
+        else:
+            request = requests.Request(method, url, data=data, auth=auth)
 
         if self._is_dummy:
             return request
