@@ -16,7 +16,7 @@ tdd: tools deps
 	cd $(SRC);\
 	$(PYTHON) -m pytest -v --exitfirst  --pdb ../tests
 
-try: tools deps
+ipython: tools deps
 	cd $(SRC);\
 	ipython
 
