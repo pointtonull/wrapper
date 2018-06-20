@@ -25,12 +25,14 @@ class Session:
         Creates the pre-emptive interface from intropestive API root.
         """
 
-        self._is_dummy = not root.startswith("https://")
+        self._is_dummy = not (root.startswith("https://") or root.startswith("http://"))
         if self._is_dummy:
             definition = open(root).read()
             definition = json.loads(definition)
             self.root = "dummy://"
         else:
+            if not root.endswith("/"):
+                root += "/"
             response = requests.get(root)
             self.root = root
             definition = response.json()
