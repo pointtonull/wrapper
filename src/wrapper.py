@@ -36,15 +36,19 @@ class Session:
             profile_conf = self._config[profile]
         except KeyError as key:
             read_files = ", ".join(self._config.paths)
-            raise ValueError("Profile %s not found in conf files: %s" % (key, read_files))
+            if profile != "default":
+                raise ValueError("Profile %s not found in conf files: %s" % (key, read_files))
+            profile_conf = {}
 
         if endpoint is None:
-            endpoint = profile_conf["endpoint"]
+            try:
+                endpoint = profile_conf["endpoint"]
+            except KeyError:
+                raise ValueError("'endpoint' not found in conf files or explicitly provided")
         self._is_dummy = not (endpoint.startswith("https://") or endpoint.startswith("http://"))
 
         if apikey is None:
             apikey = profile_conf.get("qi_data_api_key")
-
 
         if self._is_dummy:
             definition = open(endpoint).read()
