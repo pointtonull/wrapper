@@ -11,46 +11,69 @@ import json
 import os
 import re
 import types
+from configparser import ConfigParser
 
 import requests
 
 RE_VARS = re.compile(r"/{.*")
 RE_VAR = re.compile(r"{([\w_]+?)}")
 
-
 class Session:
 
-    def __init__(self, root):
+    def __init__(self, profile="default", endpoint=None, apikey=None):
         """
         Creates the pre-emptive interface from intropestive API root.
+
+        Reads configuration defaults for <profile>.
+        Endpoint can be a http[s] url or a local file.
+        Apikey will use if present.
         """
 
-        self._is_dummy = not (root.startswith("https://") or root.startswith("http://"))
+        self._config = ConfigParser()
+        self._config.paths = self._config.read(os.path.expanduser("~/.qi/config"))
+
+        try:
+            profile_conf = self._config[profile]
+        except KeyError as key:
+            read_files = ", ".join(self._config.paths)
+            raise ValueError("Profile %s not found in conf files: %s" % (key, read_files))
+
+        if endpoint is None:
+            endpoint = profile_conf["endpoint"]
+        self._is_dummy = not (endpoint.startswith("https://") or endpoint.startswith("http://"))
+
+        if apikey is None:
+            apikey = profile_conf.get("qi_data_api_key")
+
+
         if self._is_dummy:
-            definition = open(root).read()
+            definition = open(endpoint).read()
             definition = json.loads(definition)
-            self.root = "dummy://"
+            self._endpoint = "dummy://"
         else:
-            if not root.endswith("/"):
-                root += "/"
-            response = requests.get(root)
-            self.root = root
+            if not endpoint.endswith("/"):
+                endpoint += "/"
+            response = requests.get(endpoint)
+            self._endpoint = endpoint
             definition = response.json()
 
         self._definition = definition
         self._init()
-        self.requests = requests.Session()
+
+        self._requests = requests.Session()
+        if apikey is not None:
+            self._requests.headers["x-api-key"] = apikey
 
 
-    def authenticate(self, username, password):
-        """
-        """
-        self.user = self.post_authenticate(data="", auth=(username, password))
-        if "IdToken" in self.user:
-            self.requests.headers["x-auth-token"] = self.user["IdToken"]
-        else:
-            raise ValueError("'IdToken' not found in auth answer: '%s'" % self.user)
-        return self.user
+#    def authenticate(self, username, password):
+#        """
+#        """
+#        self.user = self.post_authenticate(data="", auth=(username, password))
+#        if "IdToken" in self.user:
+#            self._requests.headers["x-auth-token"] = self.user["IdToken"]
+#        else:
+#            raise ValueError("'IdToken' not found in auth answer: '%s'" % self.user)
+#        return self.user
 
 
     def _init(self):
@@ -78,6 +101,7 @@ class Session:
 
             self.__doc__ += "%s:" % endpoint
             self.__doc__ += "%s\n" % description
+
 
     def _create_method(self, method_name, ep_vars, ep_type, ep_url, endpoint,
                        description):
@@ -116,7 +140,7 @@ class Session:
         """
         Executes the query if working with a real url
         """
-        url = self.root + endpoint.format(**scope).lstrip("/")
+        url = self._endpoint + endpoint.format(**scope).lstrip("/")
         data = scope.get("data")
         kwargs = scope.get("kwargs")
         auth = kwargs.pop("auth", None)
@@ -130,8 +154,8 @@ class Session:
         if self._is_dummy:
             return request
 
-        request = self.requests.prepare_request(request)
-        response = self.requests.send(request)
+        request = self._requests.prepare_request(request)
+        response = self._requests.send(request)
         try:
             return response.json()
         except:  # noqa
